@@ -113,6 +113,9 @@ open class Configurable(
     protected fun int(name: String, default: Int, range: IntRange, suffix: String = "") =
         rangedValue(name, default, range, suffix, ValueType.INT)
 
+    protected fun double(name: String, default: Double, range: ClosedFloatingPointRange<Double>, suffix: String = "") =
+        rangedValue(name, default, range, suffix, ValueType.FLOAT)
+
     protected fun key(name: String, default: Int) = value(name, default, ValueType.KEY)
 
     protected fun intRange(name: String, default: IntRange, range: IntRange, suffix: String = "") =
