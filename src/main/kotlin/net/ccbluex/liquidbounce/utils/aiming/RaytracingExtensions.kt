@@ -80,7 +80,7 @@ fun raytraceEntity(
 
 fun raytraceBlock(
     range: Double,
-    rotation: Rotation,
+    rotation: Rotation = RotationManager.serverRotation,
     pos: BlockPos,
     state: BlockState,
 ): BlockHitResult? {
@@ -101,7 +101,7 @@ fun raytraceBlock(
 }
 
 fun raycast(
-    rotation: Rotation,
+    rotation: Rotation = RotationManager.serverRotation,
     range: Double = max(player.blockInteractionRange, player.entityInteractionRange),
     includeFluids: Boolean = false,
     tickDelta: Float = 1.0f,

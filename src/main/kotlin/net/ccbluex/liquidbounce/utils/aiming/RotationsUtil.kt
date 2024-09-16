@@ -67,7 +67,8 @@ open class RotationsConfigurable(
             LinearAngleSmoothMode(it),
             BezierAngleSmoothMode(it),
             SigmoidAngleSmoothMode(it),
-            ConditionalLinearAngleSmoothMode(it)
+            ConditionalLinearAngleSmoothMode(it),
+            AccelerationSmoothMode(it)
         )
     })
 
@@ -76,7 +77,7 @@ open class RotationsConfigurable(
 
     var fixVelocity by boolean("FixVelocity", fixVelocity)
     val resetThreshold by float("ResetThreshold", 2f, 1f..180f)
-    private val ticksUntilReset by int("TicksUntilReset", 5, 1..30, "ticks")
+    val ticksUntilReset by int("TicksUntilReset", 5, 1..30, "ticks")
     private val changeLook by boolean("ChangeLook", changeLook)
 
     fun toAimPlan(rotation: Rotation, vec: Vec3d? = null, entity: Entity? = null,
@@ -144,7 +145,11 @@ object RotationManager : Listenable {
      */
     var currentRotation: Rotation? = null
         set(value) {
-            previousRotation = field ?: mc.player?.rotation ?: Rotation.ZERO
+            if (value == null) {
+                previousRotation = null
+            } else {
+                previousRotation = field ?: mc.player?.rotation ?: Rotation.ZERO
+            }
 
             field = value
         }
@@ -292,7 +297,7 @@ object RotationManager : Listenable {
     /**
      * Checks if it should update the server-side rotations
      */
-    private fun allowedToUpdate() = !CombatManager.shouldPauseRotation()
+    private fun allowedToUpdate() = !CombatManager.shouldPauseRotation
 
     fun rotationMatchesPreviousRotation(): Boolean {
         val player = mc.player ?: return false

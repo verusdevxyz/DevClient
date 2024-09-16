@@ -53,5 +53,4 @@ internal object NoFallVulcanTP : Choice("VulcanTP288") {
             player.input.sneaking = true
         }
     }
-
 }

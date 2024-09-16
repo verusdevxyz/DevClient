@@ -22,6 +22,7 @@ import net.ccbluex.liquidbounce.config.Choice
 import net.ccbluex.liquidbounce.config.NamedChoice
 import net.ccbluex.liquidbounce.config.NoneChoice
 import net.ccbluex.liquidbounce.config.ToggleableConfigurable
+import net.ccbluex.liquidbounce.event.events.GameTickEvent
 import net.ccbluex.liquidbounce.event.events.MovementInputEvent
 import net.ccbluex.liquidbounce.event.events.SimulatedTickEvent
 import net.ccbluex.liquidbounce.event.handler
@@ -106,19 +107,38 @@ object ModuleScaffold : Module("Scaffold", Category.WORLD) {
 
     private val sameYMode by enumChoice("SameY", SameYMode.OFF)
 
-    enum class SameYMode(override val choiceName: String) : NamedChoice {
+    enum class SameYMode(
+        override val choiceName: String,
+        val getTargetedBlockPos: (BlockPos) -> BlockPos?
+    ) : NamedChoice {
 
-        OFF("Off"),
+        OFF("Off", { null }),
 
         /**
          * Places blocks at the same Y level as the player
          */
-        ON("On"),
+        ON("On", { blockPos -> BlockPos(blockPos.x, placementY, blockPos.z) }),
 
         /**
          * Places blocks at the same Y level as the player, but only if the player is not falling
          */
-        FALLING("Falling")
+        FALLING("Falling", { blockPos ->
+            BlockPos(blockPos.x, placementY, blockPos.z).takeIf { player.velocity.y < 0.2 }
+        }),
+
+        /**
+         * Similar to FALLING, but only when a certain velocity is triggered and after
+         * 2 jumps
+         */
+        HYPIXEL("Hypixel", { blockPos ->
+            if (ModuleScaffold.player.velocity.y == -0.15233518685055708 && jumps >= 2) {
+                jumps = 0
+
+                BlockPos(blockPos.x, startY, blockPos.z)
+            } else {
+                BlockPos(blockPos.x, startY - 1, blockPos.z)
+            }
+        })
 
     }
 
@@ -186,6 +206,8 @@ object ModuleScaffold : Module("Scaffold", Category.WORLD) {
 
     private var placementY = 0
     private var forceSneak = 0
+    private var startY = 0
+    private var jumps = 0
 
     val blockCount: Int
         get() {
@@ -244,6 +266,8 @@ object ModuleScaffold : Module("Scaffold", Category.WORLD) {
     override fun enable() {
         // Placement Y is the Y coordinate of the block below the player
         placementY = player.blockPos.y - 1
+        startY = player.blockPos.y
+        jumps = 2
 
         ScaffoldMovementPlanner.reset()
         ScaffoldMovementPrediction.reset()
@@ -346,8 +370,6 @@ object ModuleScaffold : Module("Scaffold", Category.WORLD) {
         }
     }
 
-
-
     var currentOptimalLine: Line? = null
 
     @Suppress("unused")
@@ -383,6 +405,12 @@ object ModuleScaffold : Module("Scaffold", Category.WORLD) {
         if (player.isOnGround) {
             // Placement Y is the Y coordinate of the block below the player
             placementY = player.blockPos.y - 1
+            jumps++
+        }
+
+        if(mc.options.jumpKey.isPressed) {
+            startY = player.blockPos.y
+            jumps = 2
         }
 
         val target = currentTarget
@@ -529,19 +557,7 @@ object ModuleScaffold : Module("Scaffold", Category.WORLD) {
         }
 
         if (!isTowering) {
-            when(sameYMode) {
-                SameYMode.ON -> {
-                    return BlockPos(blockPos.x, placementY, blockPos.z)
-                }
-
-                SameYMode.FALLING -> {
-                    if (player.velocity.y < 0.2) {
-                        return BlockPos(blockPos.x, placementY, blockPos.z)
-                    }
-                }
-
-                else -> {}
-            }
+            sameYMode.getTargetedBlockPos(blockPos)?.let { return it }
         } else if (towerMode.activeChoice == ScaffoldTowerMotion &&
             ScaffoldTowerMotion.placeOffOnNoInput && !player.moving) {
             // Find the block closest to the player

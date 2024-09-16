@@ -37,7 +37,7 @@ class SpeedGrimTest(override val parent: ChoiceConfigurable<*>) : Choice("GrimTe
         }
 
         player.networkHandler.sendPacket(ClientCommandC2SPacket(player, Mode.START_SPRINTING))
-        it.jumping = true
+        //it.jumping = true
     }
 
     /**
@@ -72,7 +72,7 @@ class SpeedGrimTest(override val parent: ChoiceConfigurable<*>) : Choice("GrimTe
 
         if (inGame && player.moving && packet is PlayerMoveC2SPacket) {
             handlePacket(PlayerMoveC2SPacket.Full(player.x, player.y + 0.1, player.z, player.yaw, player.pitch, false))
-            event.cancelEvent()
+            //event.cancelEvent()
         }
     }
 
